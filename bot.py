@@ -1,17 +1,19 @@
 import discord
 from discord.ext import tasks
 import requests
+import os
 
-TOKEN = "MTQ4NTQxMDI3NzE3NTU5MDk3Mg.GBh9J6.5OiaOfII0yZZ6D8ibk7e35eWZOxVs9mO1LW0oY"  # Token
-CHANNEL_ID = 1485411897338495076  # Destination Channel
-URL_TO_CHECK = "https://allshop.dpdns.org/"
+TOKEN = os.getenv("DISCORD_TOKEN")  # ← Kommt von Railway, nicht aus dem Code
+CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
+URL_TO_CHECK = os.getenv("URL_TO_CHECK", "https://allshop.dpdns.org/")
 
 intents = discord.Intents.default()
 client = discord.Client(intents=intents)
 
 @client.event
 async def on_ready():
-   print(f'{client.user}')
+    print(f'{client.user}')
+    check_website.start()
 
 @tasks.loop(minutes=5)
 async def check_website():
@@ -23,7 +25,7 @@ async def check_website():
             status = f"Server works but gets this error: {response.status_code}"
     except requests.exceptions.RequestException:
         status = "Server down"
-
+    
     channel = client.get_channel(CHANNEL_ID)
     if channel:
         await channel.send(status)
