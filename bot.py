@@ -23,15 +23,23 @@ async def check_server_status():
 @bot.event
 async def on_ready():
     print(f'{bot.user} is online')
-    update_status.start()
-    await bot.tree.sync()
-    print("Commands synced!")
+    try:
+        synced = await bot.tree.sync()
+        print(f"Synced {len(synced)} command(s)")
+    except Exception as e:
+        print(f"Failed to sync commands: {e}")
+    
+    if not update_status.is_running():
+        update_status.start()
 
 @tasks.loop(minutes=1)
 async def update_status():
-    status = await check_server_status()
-    activity = discord.Activity(type=discord.ActivityType.watching, name=status)
-    await bot.change_presence(activity=activity)
+    try:
+        status = await check_server_status()
+        activity = discord.Activity(type=discord.ActivityType.watching, name=status)
+        await bot.change_presence(activity=activity)
+    except Exception as e:
+        print(f"Error updating status: {e}")
 
 @bot.tree.command(name="checkserver", description="Check server status")
 async def checkserver(interaction: discord.Interaction):
