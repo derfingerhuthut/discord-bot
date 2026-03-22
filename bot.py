@@ -2,7 +2,7 @@ import discord
 from discord.ext import tasks
 import requests
 
-TOKEN = "MTQ4NTQxMDI3NzE3NTU5MDk3Mg.GOBmQT.MO8gqMW2LJp8_gXwGBlb3Jy0kGpkGHuk7mYUns"  # Token
+TOKEN = "MTQ4NTQxMDI3NzE3NTU5MDk3Mg.GBh9J6.5OiaOfII0yZZ6D8ibk7e35eWZOxVs9mO1LW0oY"  # Token
 CHANNEL_ID = 1485411897338495076  # Destination Channel
 URL_TO_CHECK = "https://allshop.dpdns.org/"
 
