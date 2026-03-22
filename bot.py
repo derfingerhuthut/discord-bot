@@ -4,7 +4,8 @@ import requests
 import os
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
+CHANNEL_ID_STR = os.getenv("CHANNEL_ID", "0")
+CHANNEL_ID = int(CHANNEL_ID_STR) if CHANNEL_ID_STR else 0
 URL_TO_CHECK = os.getenv("URL_TO_CHECK", "https://allshop.dpdns.org/")
 
 intents = discord.Intents.default()
@@ -29,6 +30,9 @@ async def on_ready():
 
 @tasks.loop(minutes=5)
 async def check_website():
+    if CHANNEL_ID == 0:
+        print("CHANNEL_ID not set, skipping check")
+        return
     status = await check_server_status()
     channel = bot.get_channel(CHANNEL_ID)
     if channel:
