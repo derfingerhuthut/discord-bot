@@ -4,8 +4,6 @@ import requests
 import os
 
 TOKEN = os.getenv("DISCORD_TOKEN")
-CHANNEL_ID_STR = os.getenv("CHANNEL_ID", "0")
-CHANNEL_ID = int(CHANNEL_ID_STR) if CHANNEL_ID_STR else 0
 URL_TO_CHECK = os.getenv("URL_TO_CHECK", "https://allshop.dpdns.org/")
 
 intents = discord.Intents.default()
@@ -18,29 +16,27 @@ async def check_server_status():
         if response.status_code == 200:
             return "✅ Server is working!"
         else:
-            return f"⚠️ Server works but gets this error: {response.status_code}"
+            return f"⚠️ Server error: {response.status_code}"
     except requests.exceptions.RequestException:
         return "❌ Server down"
 
 @bot.event
 async def on_ready():
-    print(f'{bot.user}')
-    check_website.start()
+    print(f'{bot.user} is online')
+    update_status.start()
     await bot.tree.sync()
+    print("Commands synced!")
 
-@tasks.loop(minutes=5)
-async def check_website():
-    if CHANNEL_ID == 0:
-        print("CHANNEL_ID not set, skipping check")
-        return
+@tasks.loop(minutes=1)
+async def update_status():
     status = await check_server_status()
-    channel = bot.get_channel(CHANNEL_ID)
-    if channel:
-        await channel.send(status)
+    activity = discord.Activity(type=discord.ActivityType.watching, name=status)
+    await bot.change_presence(activity=activity)
 
 @bot.tree.command(name="checkserver", description="Check server status")
 async def checkserver(interaction: discord.Interaction):
+    await interaction.response.defer()
     status = await check_server_status()
-    await interaction.response.send_message(status)
+    await interaction.followup.send(status)
 
 bot.run(TOKEN)
