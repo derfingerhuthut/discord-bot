@@ -11,6 +11,7 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 URL_TO_CHECK = os.getenv("URL_TO_CHECK", "https://allshop.dpdns.org/")
 
 intents = discord.Intents.default()
+intents.members = True  # needed for guild.owner and member info
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # ─── Helper ────────────────────────────────────────────────────────────────────
@@ -223,7 +224,7 @@ bot.start_time = datetime.datetime.now(datetime.timezone.utc)
 
 @bot.tree.command(name="uptime", description="Show how long the bot has been running")
 async def uptime(interaction: discord.Interaction):
-    delta = datetime.datetime.utcnow() - bot.start_time
+    delta = datetime.datetime.now(datetime.timezone.utc) - bot.start_time
     hours, remainder = divmod(int(delta.total_seconds()), 3600)
     minutes, seconds = divmod(remainder, 60)
     days = delta.days
@@ -296,8 +297,16 @@ async def serverinfo(interaction: discord.Interaction):
         await interaction.response.send_message("❌ This command must be used in a server.")
         return
 
+    # guild.owner can be None if member cache is incomplete — fetch as fallback
+    owner = guild.owner
+    if owner is None:
+        try:
+            owner = await guild.fetch_member(guild.owner_id)
+        except Exception:
+            owner = f"<@{guild.owner_id}>"
+
     embed = discord.Embed(title=f"📊 {guild.name}", color=discord.Color.blue())
-    embed.add_field(name="Owner",    value=str(guild.owner),          inline=True)
+    embed.add_field(name="Owner",    value=str(owner),                inline=True)
     embed.add_field(name="Members",  value=str(guild.member_count),   inline=True)
     embed.add_field(name="Channels", value=str(len(guild.channels)),  inline=True)
     embed.add_field(name="Roles",    value=str(len(guild.roles)),     inline=True)
@@ -343,6 +352,44 @@ async def botinfo(interaction: discord.Interaction):
     embed.add_field(name="Monitoring",   value=URL_TO_CHECK,                inline=False)
     embed.set_footer(text="Use /checkserver to check the monitored server status.")
     await interaction.response.send_message(embed=embed)
+
+# ─── /dmfunfact ────────────────────────────────────────────────────────────────
+
+FUNFACTS_3DS = [
+    "🎮 The Nintendo 3DS has no traditional OS. The Home Menu is actually just a title (app) that runs like any other game — it is called the HOME Menu applet.",
+    "🎮 The 3DS has two separate processors: an ARM11 for games and a legacy ARM9 co-processor originally used for DS backwards compatibility.",
+    "🎮 The 3DS was the first mainstream handheld to feature glasses-free 3D — using a parallax barrier display that splits light for each eye.",
+    "🎮 The 3DS's StreetPass system would silently exchange data with other 3DS units nearby — even when the console was closed and in your bag.",
+    "🎮 The 3DS has a built-in pedometer. Every 100 steps you walked generated Play Coins, which could be spent in games and apps.",
+    "🎮 The Nintendo 3DS uses a very unusual resolution: 400×240 pixels on the top screen (800×240 total for 3D), and only 320×240 on the bottom touchscreen.",
+    "🎮 The original 3DS had a maximum battery life of just 3–5 hours — so bad that Nintendo released the extended battery pack almost immediately after launch.",
+    "🎮 The 3DS eShop was permanently closed for new purchases on March 27, 2023, ending over 11 years of digital game sales.",
+    "🎮 The New Nintendo 3DS added a second analogue nub (the C-Stick), extra shoulder buttons (ZL/ZR), and a faster CPU — but only a handful of games exclusively required it.",
+    "🎮 The 3DS's SpotPass feature could push content and notifications to your device automatically over Wi-Fi, even while it was in sleep mode.",
+    "🎮 Nintendo sold over 75 million 3DS units worldwide, making it one of the best-selling dedicated handheld consoles of all time.",
+    "🎮 The 3DS camera can only shoot 0.3 megapixel photos — but it has TWO outer cameras, allowing it to take stereoscopic 3D photos.",
+    "🎮 The Nintendo 3DS launched in Japan on February 26, 2011 — exactly 25 years after the original Famicom Disk System launched in Japan.",
+    "🎮 The 3DS uses a custom-built GPU called the PICA200 by DMP, which is notable for supporting OpenGL ES 1.1 extensions not found in most mobile GPUs of the time.",
+    "🎮 The codebase for the 3DS HOME Menu is referred to internally as Tiger — a holdover from early development days at Nintendo.",
+]
+
+@bot.tree.command(name="dmfunfact", description="Sends you a random Nintendo 3DS fun fact via DM!")
+async def dmfunfact(interaction: discord.Interaction):
+    fact = random.choice(FUNFACTS_3DS)
+    try:
+        embed = discord.Embed(
+            title="💡 Nintendo 3DS Fun Fact",
+            description=fact,
+            color=discord.Color.red()
+        )
+        embed.set_footer(text="Use /dmfunfact in the server to get another one!")
+        await interaction.user.send(embed=embed)
+        await interaction.response.send_message("📬 Check your DMs!", ephemeral=True)
+    except discord.Forbidden:
+        await interaction.response.send_message(
+            "❌ I couldn't send you a DM! Please enable DMs from server members in your privacy settings.",
+            ephemeral=True
+        )
 
 # ─── Run ───────────────────────────────────────────────────────────────────────
 
