@@ -1,7 +1,7 @@
 import discord
 from discord.ext import tasks, commands
 from discord import app_commands
-import requests
+import aiohttp
 import os
 import random
 import datetime
@@ -17,12 +17,13 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 async def check_server_status():
     try:
-        response = requests.get(URL_TO_CHECK, timeout=10)
-        if response.status_code == 200:
-            return "✅ Server is working!"
-        else:
-            return f"⚠️ Server error: {response.status_code}"
-    except requests.exceptions.RequestException:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(URL_TO_CHECK, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                if response.status == 200:
+                    return "✅ Server is working!"
+                else:
+                    return f"⚠️ Server error: {response.status}"
+    except Exception:
         return "❌ Server down"
 
 # ─── Events ────────────────────────────────────────────────────────────────────
@@ -31,7 +32,10 @@ async def check_server_status():
 async def on_ready():
     print(f'{bot.user} is online')
     try:
-        # Guild sync = commands appear instantly (no 1-hour Discord cache delay)
+        # Clear all global commands (removes duplicates from old global sync)
+        bot.tree.clear_commands(guild=None)
+        await bot.tree.sync()
+        # Guild sync = commands appear instantly
         for guild in bot.guilds:
             bot.tree.copy_global_to(guild=guild)
             synced = await bot.tree.sync(guild=guild)
