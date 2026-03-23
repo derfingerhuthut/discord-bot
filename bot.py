@@ -7,7 +7,6 @@ TOKEN = os.getenv("DISCORD_TOKEN")
 URL_TO_CHECK = os.getenv("URL_TO_CHECK", "https://allshop.dpdns.org/")
 
 intents = discord.Intents.default()
-intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 async def check_server_status():
@@ -28,7 +27,7 @@ async def on_ready():
         print(f"Synced {len(synced)} command(s)")
     except Exception as e:
         print(f"Failed to sync commands: {e}")
-    
+
     if not update_status.is_running():
         update_status.start()
 
@@ -43,8 +42,7 @@ async def update_status():
 
 @bot.tree.command(name="checkserver", description="Check server status")
 async def checkserver(interaction: discord.Interaction):
-    await interaction.response.defer()
     status = await check_server_status()
-    await interaction.followup.send(status)
+    await interaction.response.send_message(status)
 
 bot.run(TOKEN)
