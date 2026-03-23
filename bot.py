@@ -32,10 +32,6 @@ async def check_server_status():
 async def on_ready():
     print(f'{bot.user} is online')
     try:
-        # Clear all global commands (removes duplicates from old global sync)
-        bot.tree.clear_commands(guild=None)
-        await bot.tree.sync()
-        # Guild sync = commands appear instantly
         for guild in bot.guilds:
             bot.tree.copy_global_to(guild=guild)
             synced = await bot.tree.sync(guild=guild)
@@ -60,8 +56,9 @@ async def update_status():
 
 @bot.tree.command(name="checkserver", description="Check server status")
 async def checkserver(interaction: discord.Interaction):
+    await interaction.response.defer()
     status = await check_server_status()
-    await interaction.response.send_message(status)
+    await interaction.followup.send(status)
 
 # ─── /game ─────────────────────────────────────────────────────────────────────
 
