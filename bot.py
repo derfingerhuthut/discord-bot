@@ -31,8 +31,11 @@ async def check_server_status():
 async def on_ready():
     print(f'{bot.user} is online')
     try:
-        synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} command(s)")
+        # Guild sync = commands appear instantly (no 1-hour Discord cache delay)
+        for guild in bot.guilds:
+            bot.tree.copy_global_to(guild=guild)
+            synced = await bot.tree.sync(guild=guild)
+            print(f"Synced {len(synced)} command(s) to: {guild.name}")
     except Exception as e:
         print(f"Failed to sync commands: {e}")
     if not update_status.is_running():
@@ -169,9 +172,11 @@ GAME_DESCRIPTIONS = {
 }
 
 DEFAULT_DESCRIPTION = (
-    " **{title}**\n"
-    "This Title isn't in the Database right now"
-
+    "🎮 **{title}**\n"
+    "A beloved Nintendo 3DS title! This game is part of the rich 3DS library, known for "
+    "its engaging gameplay and Nintendo's signature charm. Whether you're a longtime fan "
+    "or new to the franchise, it's well worth playing. Check it out!\n"
+    "🕹️ **Available on:** Nintendo 3DS / 2DS / New 3DS\n⭐ **Status:** Fan Favorite"
 )
 
 @bot.tree.command(name="game", description="Get info about a random Nintendo 3DS game")
@@ -213,7 +218,7 @@ async def ping(interaction: discord.Interaction):
 
 # ─── /uptime ───────────────────────────────────────────────────────────────────
 
-bot.start_time = datetime.datetime.utcnow()
+bot.start_time = datetime.datetime.now(datetime.timezone.utc)
 
 @bot.tree.command(name="uptime", description="Show how long the bot has been running")
 async def uptime(interaction: discord.Interaction):
@@ -226,7 +231,7 @@ async def uptime(interaction: discord.Interaction):
     if hours: parts.append(f"**{hours}h**")
     if minutes: parts.append(f"**{minutes}m**")
     parts.append(f"**{seconds}s**")
-    await interaction.response.send_message(f" Bot has been online for: {' '.join(parts)}")
+    await interaction.response.send_message(f"⏱️ Bot has been online for: {' '.join(parts)}")
 
 # ─── /roll ─────────────────────────────────────────────────────────────────────
 
@@ -264,12 +269,12 @@ async def coinflip(interaction: discord.Interaction):
 EIGHT_BALL_RESPONSES = [
     "✅ It is certain.", "✅ It is decidedly so.", "✅ Without a doubt.",
     "✅ Yes, definitely.", "✅ You may rely on it.", "✅ As I see it, yes.",
-    "✅ Most likely.", "✅ Probably.", "✅ Yes.", "✅ Signs point to yes.",
+    "✅ Most likely.", "✅ Outlook good.", "✅ Yes.", "✅ Signs point to yes.",
     "🤷 Reply hazy, try again.", "🤷 Ask again later.",
     "🤷 Better not tell you now.", "🤷 Cannot predict now.",
     "🤷 Concentrate and ask again.",
-    "❌ Don't count on it.", "❌ definitely not!!", "❌ My sources say no.",
-    "❌ definitely not!!", "❌ Very doubtful.",
+    "❌ Don't count on it.", "❌ My reply is no.", "❌ My sources say no.",
+    "❌ Outlook not so good.", "❌ Very doubtful.",
 ]
 
 @bot.tree.command(name="8ball", description="Ask the Magic 8-Ball a yes/no question")
